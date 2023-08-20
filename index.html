@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS styles go here */
+        
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
@@ -52,7 +52,7 @@
 </div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Define custom icons for each category with image URLs
+        // custom icons
         const icons = {
             wildfires: L.icon({
                 iconUrl: 'wildfire.png',
@@ -71,7 +71,7 @@
                 iconSize: [20, 20],
             }),
         };
-
+ // used to update api whenever button clicked
         document.addEventListener("DOMContentLoaded", function () {
             const categoryCheckboxes = document.getElementById("categoryCheckboxes");
             const map = L.map('map').setView([0, 0], 2);
@@ -85,14 +85,14 @@
             const specificCategories = ['wildfires', 'seaLakeIce', 'volcanoes', 'severeStorms'];
             const categoryTitles = ['Wildfires', 'Iceberg', 'Volcanoes', 'Severe Storms'];
 
-            // Function to create checkboxes for specific categories
+            // creates checkboxes
             function createSpecificCategoryCheckboxes() {
                 specificCategories.forEach((category, index) => {
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
                     checkbox.id = category;
                     checkbox.value = specificCategories[index];
-                    checkbox.checked = false; // Initially unchecked
+                    checkbox.checked = false; 
                     checkbox.addEventListener("change", updateMap);
                     const label = document.createElement("label");
                     label.htmlFor = category;
