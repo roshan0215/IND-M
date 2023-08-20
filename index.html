@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* CSS styles go here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex; 
+            height: 100vh; 
+            margin: 0;
+        }
+
+        #map {
+            width: 75%; 
+            height: 100%;
+            border-right: 2px solid black; 
+              }
+
+        #categoryCheckboxes {
+            width: 25%; 
+            padding: 1em;
+            background-color: white;
+            overflow-y: auto; 
+            
+        }
+          #categoryCheckboxes {
+        width: 25%; 
+        padding: 1em;
+        background-color: #f2efe9;
+        overflow-y: auto; 
+    }
+
+        #categoryCheckboxes label {
+            display: block; 
+            margin-bottom: 0.5em;
+        }
+    </style>
+    <title>Interactive Natural Disasters Map (INDM)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<link rel="icon" type="image/x-icon" href="Favicon.png">
+</head>
+<body>
+    <div id="map"></div>
+    <div id="categoryCheckboxes">
+        <h1>Interactive Natural Disasters Map (INDM)</h1>
+    </div>
+  <div id="imageContainer">
+    <img src="INDM.png" alt="Image Description" style="width: 300px; height: 300px; position: fixed; bottom: 0; right: 0;">
+</div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Define custom icons for each category with image URLs
+        const icons = {
+            wildfires: L.icon({
+                iconUrl: 'wildfire.png',
+                iconSize: [20, 20], // Adjust the size as needed
+            }),
+            seaLakeIce: L.icon({
+                iconUrl: 'iceberg.png',
+                iconSize: [20, 20],
+            }),
+            volcanoes: L.icon({
+                iconUrl: 'volcano.png',
+                iconSize: [20, 20],
+            }),
+            severeStorms: L.icon({
+                iconUrl: 'severestorm.png',
+                iconSize: [20, 20],
+            }),
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const categoryCheckboxes = document.getElementById("categoryCheckboxes");
+            const map = L.map('map').setView([0, 0], 2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // List of specific categories to display
+            const specificCategories = ['wildfires', 'seaLakeIce', 'volcanoes', 'severeStorms'];
+            const categoryTitles = ['Wildfires', 'Iceberg', 'Volcanoes', 'Severe Storms'];
+
+            // Function to create checkboxes for specific categories
+            function createSpecificCategoryCheckboxes() {
+                specificCategories.forEach((category, index) => {
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = category;
+                    checkbox.value = specificCategories[index];
+                    checkbox.checked = false; // Initially unchecked
+                    checkbox.addEventListener("change", updateMap);
+                    const label = document.createElement("label");
+                    label.htmlFor = category;
+                    label.textContent = categoryTitles[index];
+
+                    categoryCheckboxes.appendChild(checkbox);
+                    categoryCheckboxes.appendChild(label);
+                });
+            }
+
+            // Function to update the map based on selected checkboxes
+            function updateMap() {
+                // Get selected categories from the checkboxes
+                const selectedCategories = Array.from(categoryCheckboxes.querySelectorAll("input[type=checkbox]:checked"))
+                    .map(checkbox => checkbox.value);
+
+                // Construct the API URL with selected categories
+                const apiUrl = `https://eonet.gsfc.nasa.gov/api/v3/events?category=${selectedCategories.join(',')}`;
+
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Clear existing markers
+                        map.eachLayer(layer => {
+                            if (layer instanceof L.Marker) {
+                                map.removeLayer(layer);
+                            }
+                        });
+
+                        // Check if data is present and not empty
+                        if (data && data.events && data.events.length > 0) {
+                            // Add markers for each event with custom icons
+                            data.events.forEach(event => {
+                                const latitude = event.geometry[0].coordinates[1];
+                                const longitude = event.geometry[0].coordinates[0];
+                                const description = event.title;
+                                const category = event.categories[0].id;
+
+                                if (latitude && longitude) {
+                                    const marker = L.marker([latitude, longitude], {
+                                        icon: icons[category], // Use the custom icon for the category
+                                    }).addTo(map);
+                                    marker.bindPopup(description || 'No description available');
+                                }
+                            });
+                        } else {
+                            alert("No natural events data available for the selected categories.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching data: ", error);
+                    });
+            }
+
+            // Create checkboxes for specific categories when the page loads
+            createSpecificCategoryCheckboxes();
+        });
+    </script>
+</body>
+</html>
