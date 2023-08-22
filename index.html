@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        
+        /* CSS styles go here */
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
@@ -16,22 +16,15 @@
         #map {
             width: 75%; 
             height: 100%;
-            border-right: 2px solid black; 
-              }
+            border-right: 2px solid black;
+        }
 
         #categoryCheckboxes {
             width: 25%; 
             padding: 1em;
-            background-color: white;
+            background-color: #f2efe9;
             overflow-y: auto; 
-            
         }
-          #categoryCheckboxes {
-        width: 25%; 
-        padding: 1em;
-        background-color: #f2efe9;
-        overflow-y: auto; 
-    }
 
         #categoryCheckboxes label {
             display: block; 
@@ -40,20 +33,18 @@
     </style>
     <title>Interactive Natural Disasters Map (INDM)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-<link rel="icon" type="image/x-icon" href="Favicon.png">
 </head>
 <body>
     <div id="map"></div>
     <div id="categoryCheckboxes">
         <h1>Interactive Natural Disasters Map (INDM)</h1>
     </div>
-  <div id="imageContainer">
+    <div id="imageContainer">
     <img src="INDM.png" alt="Image Description" style="width: 300px; height: 300px; position: fixed; bottom: 0; right: 0;">
 </div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // custom icons
-        const icons = {
+      const icons = {
             wildfires: L.icon({
                 iconUrl: 'wildfire.png',
                 iconSize: [20, 20], // Adjust the size as needed
@@ -71,13 +62,24 @@
                 iconSize: [20, 20],
             }),
         };
- // used to update api whenever button clicked
+
         document.addEventListener("DOMContentLoaded", function () {
             const categoryCheckboxes = document.getElementById("categoryCheckboxes");
-            const map = L.map('map').setView([0, 0], 2);
+            
+            // Define the bounds for the map movement
+            const southWest = L.latLng(-90, -180);
+            const northEast = L.latLng(90, 180);
+            const bounds = L.latLngBounds(southWest, northEast);
+            
+            // Create the map instance and set the bounds
+            const map = L.map('map', {
+                maxBounds: bounds,
+            }).setView([0, 0], 3); // Set initial view coordinates and zoom
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
+                minZoom: 2,
+
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
@@ -85,14 +87,14 @@
             const specificCategories = ['wildfires', 'seaLakeIce', 'volcanoes', 'severeStorms'];
             const categoryTitles = ['Wildfires', 'Iceberg', 'Volcanoes', 'Severe Storms'];
 
-            // creates checkboxes
+            // Function to create checkboxes for specific categories
             function createSpecificCategoryCheckboxes() {
                 specificCategories.forEach((category, index) => {
                     const checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
                     checkbox.id = category;
                     checkbox.value = specificCategories[index];
-                    checkbox.checked = false; 
+                    checkbox.checked = false; // Initially unchecked
                     checkbox.addEventListener("change", updateMap);
                     const label = document.createElement("label");
                     label.htmlFor = category;
@@ -158,3 +160,4 @@
     </script>
 </body>
 </html>
+
