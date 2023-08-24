@@ -4,55 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS styles go here */
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-            display: flex;
-            height: 100vh;
             margin: 0;
+        }
+
+        #toolbar {
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1em;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        #toolbar button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 0.5em 1em;
+            cursor: pointer;
+        }
+
+        #toolbar button:hover {
+            background-color: #555;
         }
 
         #map {
             width: 100%;
-            height: 100%;
-            border-right: 2px solid black;
+            height: calc(100vh); /* Subtracting the toolbar height */
         }
 
-        #categoryCheckboxes {
-            width: 25%;
-            padding: 1em;
-            background-color: #f5f5f5;
-            overflow-y: auto;
+        /* Position the Leaflet zoom control at the bottom left */
+        .leaflet-control-zoom {
+            bottom: -60px;
+            left: 1850px;
         }
 
-        #categoryCheckboxes label {
+        /* Dropdown menu styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            background-color: #333;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content label {
             display: block;
-            margin-bottom: 0.5em;
+            padding: 0.5em 1em;
         }
 
-        /* Add styles for the logo */
-
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
     </style>
-    <title>Interactive Natural Disasters Map (INDM)</title>
+    <title>IND-M</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="icon" type="image/x-icon" href="Favicon.png">
 </head>
 <body>
-<div id="map"></div>
-<div id="categoryCheckboxes">
-    <h1>Interactive Natural Disasters Map (INDM)</h1>
-    <div id="filterButtons">
-        <!-- Filter buttons go here -->
+<div id="toolbar">
+    <div class="dropdown">
+        <button id="filterDropdownButton">Filter</button>
+        <div class="dropdown-content" id="disasterFilters">
+            <label><input type="checkbox" id="wildfires" value="wildfires">Wildfires</label>
+            <label><input type="checkbox" id="seaLakeIce" value="seaLakeIce">Iceberg</label>
+            <label><input type="checkbox" id="volcanoes" value="volcanoes">Volcanoes</label>
+            <label><input type="checkbox" id="severeStorms" value="severeStorms">Severe Storms</label>
+        </div>
     </div>
     <button id="toggleSatelliteButton">Toggle Satellite View</button>
 </div>
+<div id="map"></div>
 <div id="imageContainer">
-    <img src="INDM.png" alt="Image Description" style="width: 200px; height: 200px; position: fixed; bottom: 0; right: 0;">
+    <img src="INDM.png" alt="Image Description" style="width: 150px; height: 250px; position: fixed; bottom: 0; right: 0;">
 </div>
-
-<!-- Add the logo image here -->
-
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
@@ -76,8 +115,9 @@
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        const categoryCheckboxes = document.getElementById("categoryCheckboxes");
         const toggleSatelliteButton = document.getElementById("toggleSatelliteButton");
+        const disasterFilters = document.getElementById("disasterFilters");
+        const toolbar = document.getElementById("toolbar");
 
         const southWest = L.latLng(-90, -180);
         const northEast = L.latLng(90, 180);
@@ -112,25 +152,8 @@
         const specificCategories = ['wildfires', 'seaLakeIce', 'volcanoes', 'severeStorms'];
         const categoryTitles = ['Wildfires', 'Iceberg', 'Volcanoes', 'Severe Storms'];
 
-        function createSpecificCategoryCheckboxes() {
-            specificCategories.forEach((category, index) => {
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.id = category;
-                checkbox.value = specificCategories[index];
-                checkbox.checked = false;
-                checkbox.addEventListener("change", updateMap);
-                const label = document.createElement("label");
-                label.htmlFor = category;
-                label.textContent = categoryTitles[index];
-
-                filterButtons.appendChild(checkbox);
-                filterButtons.appendChild(label);
-            });
-        }
-
         function updateMap() {
-            const selectedCategories = Array.from(filterButtons.querySelectorAll("input[type=checkbox]:checked"))
+            const selectedCategories = Array.from(disasterFilters.querySelectorAll("input[type=checkbox]:checked"))
                 .map(checkbox => checkbox.value);
 
             const apiUrl = `https://eonet.gsfc.nasa.gov/api/v3/events?category=${selectedCategories.join(',')}`;
@@ -159,16 +182,13 @@
                                     const description = event.title;
 
                                     if (coordinates && coordinates.length > 2) {
-                                        // Create a polygon for severe storms with a blue border
                                         const polygon = L.polygon(coordinates, {
                                             color: 'aqua',
                                             fillOpacity: 0.2
                                         }).addTo(map);
 
-                                        // Calculate the center of the polygon
                                         const center = polygon.getBounds().getCenter();
 
-                                        // Create a marker with the logo in the center of the polygon
                                         const logoMarker = L.marker(center, {
                                             icon: L.divIcon({
                                                 className: 'custom-icon',
@@ -180,7 +200,7 @@
                                         const averageMagnitude = calculateAverageMagnitude(magnitudes);
                                         const hurricaneCategory = calculateHurricaneCategory(averageMagnitude);
 
-                                        logoMarker.bindPopup(`${description || 'No description available'}<br> ${hurricaneCategory}<br>Knots: ${averageMagnitude}`);
+                                        logoMarker.bindPopup(`${description || 'No description available'}<br>${hurricaneCategory}<br>Knots: ${averageMagnitude}`);
                                     }
                                 } else if (category === "seaLakeIce") {
                                     const coordinates = event.geometry.map(point => [point.coordinates[1], point.coordinates[0]]);
@@ -190,7 +210,6 @@
                                     if (coordinates && coordinates.length > 2) {
                                         const totalArea = magnitudes.reduce((total, magnitude) => total + magnitude, 0);
 
-                                        // Create a marker for icebergs
                                         const marker = L.marker(coordinates[0], {
                                             icon: icons[category],
                                         }).addTo(map);
@@ -243,7 +262,18 @@
             }
         }
 
-        createSpecificCategoryCheckboxes();
+        // Define a function to handle checkbox changes
+        function handleCheckboxChange() {
+            updateMap();
+        }
+
+        // Attach the handleCheckboxChange function to each checkbox's change event
+        const checkboxes = disasterFilters.querySelectorAll("input[type=checkbox]");
+        checkboxes.forEach(function (checkbox) {
+            checkbox.addEventListener("change", handleCheckboxChange);
+        });
+
+        // Call updateMap() initially to load the default data
         updateMap();
     });
 </script>
